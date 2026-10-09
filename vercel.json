@@ -2,5 +2,8 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm --filter @protein-daily/web build",
   "outputDirectory": "apps/web/dist",
+  "functions": {
+    "api/recognize.ts": { "maxDuration": 30 }
+  },
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

@@ -5,7 +5,7 @@ import { Camera, ChevronLeft, Image, LoaderCircle, Plus, RefreshCw, Sparkles, Tr
 import { showToast } from 'vant'
 import type { AiFoodCandidate, MealType } from '@protein-daily/shared'
 import { calculateFoodProtein } from '@protein-daily/shared'
-import { mockCandidates, todayIso } from '@/data/mock'
+import { todayIso } from '@/data/defaults'
 import { useNutritionStore } from '@/stores/nutrition'
 import { compressImage } from '@/utils/image'
 
@@ -18,9 +18,11 @@ const albumInput = ref<HTMLInputElement | null>(null)
 const state = ref<PageState>('idle')
 const previewUrl = ref('')
 const candidates = ref<AiFoodCandidate[]>([])
+const compressedImage = ref<Blob | null>(null)
+const recognitionError = ref('')
+const recognitionDisclaimer = ref('图片识别和重量均为估算，请确认后保存。')
 const meal = ref<MealType>((route.query.meal as MealType) || 'lunch')
 const form = reactive({ foodName: '', estimatedWeight: 100, proteinPer100g: 10, weightBasis: 'cooked' as AiFoodCandidate['weightBasis'] })
-let shouldMockFail = false
 
 const hasValidCandidates = computed(() => candidates.value.length > 0 && candidates.value.every((item) => item.foodName.trim() && item.estimatedWeight > 0 && item.proteinPer100g > 0))
 const manualProtein = computed(() => calculateFoodProtein(form.estimatedWeight, form.proteinPer100g))
@@ -30,24 +32,48 @@ async function receiveImage(file?: File) {
   state.value = 'analyzing'
   try {
     const blob = await compressImage(file)
+    compressedImage.value = blob
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
     previewUrl.value = URL.createObjectURL(blob)
-    window.setTimeout(() => {
-      if (shouldMockFail) { state.value = 'error'; shouldMockFail = false; return }
-      candidates.value = structuredClone(mockCandidates)
-      state.value = 'result'
-    }, 1350)
-  } catch { state.value = 'error' }
+    await analyzeImage(blob)
+  } catch (error) {
+    recognitionError.value = error instanceof Error ? error.message : '图片处理失败'
+    state.value = 'error'
+  }
 }
 
-function retry() { state.value = 'analyzing'; window.setTimeout(() => { candidates.value = structuredClone(mockCandidates); state.value = 'result' }, 900) }
+async function analyzeImage(blob: Blob) {
+  state.value = 'analyzing'
+  recognitionError.value = ''
+  const data = new FormData()
+  data.append('image', blob, 'meal.jpg')
+
+  const response = await fetch('/api/recognize', { method: 'POST', body: data })
+  const payload = await response.json().catch(() => ({ error: '服务返回了无法解析的数据' })) as {
+    error?: string
+    disclaimer?: string
+    candidates?: AiFoodCandidate[]
+  }
+  if (!response.ok) throw new Error(payload.error || '识别暂时失败')
+  if (!payload.candidates?.length) throw new Error('图片中没有识别到食物')
+
+  candidates.value = payload.candidates
+  recognitionDisclaimer.value = payload.disclaimer || recognitionDisclaimer.value
+  state.value = 'result'
+}
+
+async function retry() {
+  if (!compressedImage.value) { state.value = 'idle'; return }
+  try { await analyzeImage(compressedImage.value) }
+  catch (error) { recognitionError.value = error instanceof Error ? error.message : '识别暂时失败'; state.value = 'error' }
+}
 function removeCandidate(id: string) { candidates.value = candidates.value.filter((item) => item.id !== id) }
 function addCandidate() {
   candidates.value.push({ id: crypto.randomUUID(), foodName: '', estimatedWeight: 100, proteinPer100g: 10, weightBasis: 'cooked', confidenceLabel: '较低', hint: '请手动确认食物信息' })
 }
 function confirmCandidates() {
   if (!hasValidCandidates.value) return
-  for (const item of candidates.value) store.addEntry({ date: todayIso, meal: meal.value, foodName: item.foodName.trim(), estimatedWeight: item.estimatedWeight, proteinPer100g: item.proteinPer100g, weightBasis: item.weightBasis, source: 'ai-estimate', imageUrl: previewUrl.value })
+  for (const item of candidates.value) store.addEntry({ date: todayIso, meal: meal.value, foodName: item.foodName.trim(), estimatedWeight: item.estimatedWeight, proteinPer100g: item.proteinPer100g, weightBasis: item.weightBasis, source: 'ai-estimate' })
   showToast(`已添加 ${candidates.value.length} 项`)
   router.push('/')
 }
@@ -92,14 +118,14 @@ onBeforeUnmount(() => { if (previewUrl.value) URL.revokeObjectURL(previewUrl.val
 
     <section v-else-if="state === 'error'" class="error-state" role="alert">
       <div class="error-icon"><RefreshCw :size="25" /></div><h2>这次没有认出来</h2>
-      <p>图片可能太暗或食物有遮挡。你可以换一张，也可以直接手动记录。</p>
+      <p>{{ recognitionError || '图片可能太暗或食物有遮挡。你可以换一张，也可以直接手动记录。' }}</p>
       <button class="primary-button" type="button" @click="retry"><RefreshCw :size="18" /> 重试识别</button>
       <button class="secondary-button" type="button" @click="state = 'manual'">手动录入</button>
     </section>
 
     <section v-else-if="state === 'result'" class="result-state">
       <div class="result-heading"><div><span><Sparkles :size="14" /> AI 估算结果</span><h2>请确认这餐</h2></div><img v-if="previewUrl" :src="previewUrl" alt="已上传的食物" /></div>
-      <p class="estimate-banner">以下重量来自图片估算，并非精确测量。请按实际情况修改后再保存。</p>
+      <p class="estimate-banner">{{ recognitionDisclaimer }}</p>
       <div class="candidate-list">
         <article v-for="(item, index) in candidates" :key="item.id" class="candidate-card">
           <header><strong>食物 {{ index + 1 }}</strong><span :class="`confidence-${item.confidenceLabel}`">把握{{ item.confidenceLabel }}</span><button type="button" aria-label="移除这项食物" @click="removeCandidate(item.id)"><Trash2 :size="17" /></button></header>

@@ -7,7 +7,7 @@
     "dev": "pnpm --filter @protein-daily/web dev",
     "dev:api": "pnpm --filter @protein-daily/api dev",
     "build": "pnpm -r build",
-    "test": "pnpm --filter @protein-daily/shared test",
+    "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {

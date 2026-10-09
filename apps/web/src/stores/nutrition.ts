@@ -8,7 +8,7 @@ import {
   type FoodEntry,
   type UserSettings,
 } from '@protein-daily/shared'
-import { defaultSettings, initialEntries, todayIso } from '@/data/mock'
+import { defaultSettings, todayIso } from '@/data/defaults'
 
 const readStored = <T>(key: string, fallback: T): T => {
   try {
@@ -18,7 +18,9 @@ const readStored = <T>(key: string, fallback: T): T => {
 }
 
 export const useNutritionStore = defineStore('nutrition', () => {
-  const entries = ref<FoodEntry[]>(readStored('protein-daily.entries', initialEntries))
+  const demoEntryIds = new Set(['entry-1', 'entry-2', 'entry-3', 'entry-4', 'entry-5', 'entry-6'])
+  const storedEntries = readStored<FoodEntry[]>('protein-daily.entries', [])
+  const entries = ref<FoodEntry[]>(storedEntries.filter((entry) => !demoEntryIds.has(entry.id)))
   const settings = ref<UserSettings>(readStored('protein-daily.settings', defaultSettings))
   const selectedDate = ref(todayIso)
 

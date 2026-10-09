@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { ChevronLeft, ChevronRight, Dumbbell } from 'lucide-vue-next'
 import type { FoodEntry, MealType } from '@protein-daily/shared'
 import { getDailyTarget, isTrainingDay } from '@protein-daily/shared'
-import { todayIso } from '@/data/mock'
+import { todayIso } from '@/data/defaults'
 import { useNutritionStore } from '@/stores/nutrition'
 import EditEntrySheet from '@/components/EditEntrySheet.vue'
 
