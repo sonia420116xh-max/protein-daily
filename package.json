@@ -1,0 +1,17 @@
+{
+  "name": "protein-daily",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.17.1",
+  "scripts": {
+    "dev": "pnpm --filter @protein-daily/web dev",
+    "dev:api": "pnpm --filter @protein-daily/api dev",
+    "build": "pnpm -r build",
+    "test": "pnpm --filter @protein-daily/shared test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
