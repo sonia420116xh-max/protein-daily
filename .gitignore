@@ -10,3 +10,4 @@ coverage
 output
 *.tsbuildinfo
 .DS_Store
+.vercel
