@@ -21,7 +21,9 @@ API 默认运行在 `http://localhost:8787`。可以通过 `OPENAI_VISION_MODEL`
 
 项目当前部署在 Vercel，根目录 `vercel.json` 会同时构建前端和 `/api/recognize` 服务端函数。生产环境必须配置 `OPENAI_API_KEY`。
 
-部署后用手机打开 HTTPS 地址，选择“添加到主屏幕”即可像 App 一样使用。当前记录保存在手机浏览器本地；换设备或清除浏览器数据不会自动同步。下一阶段接入登录和 PostgreSQL 后，才会支持跨设备同步。
+正式访问地址：[https://protein-daily-liart.vercel.app](https://protein-daily-liart.vercel.app)
+
+用手机打开该地址，选择“添加到主屏幕”即可像 App 一样使用。当前记录保存在手机浏览器本地；换设备或清除浏览器数据不会自动同步。下一阶段接入登录和 PostgreSQL 后，才会支持跨设备同步。
 
 ### Vercel 手动发布
 

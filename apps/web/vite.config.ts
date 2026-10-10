@@ -8,6 +8,7 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false,
       includeAssets: ['icons/icon.svg'],
       manifest: {
         name: 'Protein Daily',
