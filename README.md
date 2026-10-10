@@ -23,6 +23,20 @@ API 默认运行在 `http://localhost:8787`。可以通过 `OPENAI_VISION_MODEL`
 
 部署后用手机打开 HTTPS 地址，选择“添加到主屏幕”即可像 App 一样使用。当前记录保存在手机浏览器本地；换设备或清除浏览器数据不会自动同步。下一阶段接入登录和 PostgreSQL 后，才会支持跨设备同步。
 
+### Vercel 手动发布
+
+在项目根目录执行以下命令。临时预览不会影响正式网站：
+
+```bash
+pnpm dlx vercel@latest --yes
+```
+
+确认预览没有问题后，发布到正式环境：
+
+```bash
+pnpm dlx vercel@latest --prod --yes
+```
+
 ## 验证
 
 ```bash
