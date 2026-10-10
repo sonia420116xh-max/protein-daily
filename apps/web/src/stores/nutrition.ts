@@ -18,9 +18,9 @@ const readStored = <T>(key: string, fallback: T): T => {
 }
 
 export const useNutritionStore = defineStore('nutrition', () => {
-  const demoEntryIds = new Set(['entry-1', 'entry-2', 'entry-3', 'entry-4', 'entry-5', 'entry-6'])
+  const legacySeedEntryIds = new Set(['entry-1', 'entry-2', 'entry-3', 'entry-4', 'entry-5', 'entry-6'])
   const storedEntries = readStored<FoodEntry[]>('protein-daily.entries', [])
-  const entries = ref<FoodEntry[]>(storedEntries.filter((entry) => !demoEntryIds.has(entry.id)))
+  const entries = ref<FoodEntry[]>(storedEntries.filter((entry) => !legacySeedEntryIds.has(entry.id)))
   const settings = ref<UserSettings>(readStored('protein-daily.settings', defaultSettings))
   const selectedDate = ref(todayIso)
 

@@ -29,7 +29,7 @@ function exportData() {
       <section class="setting-section"><header><span>补充方案</span><h2>蛋白粉配方</h2></header><div class="two-col"><label><span class="field-label">每份重量</span><div class="input-unit"><input v-model.number="form.powder.servingWeight" class="field" type="number" inputmode="decimal" min="1" /><b>g</b></div></label><label><span class="field-label">每份含蛋白质</span><div class="input-unit"><input v-model.number="form.powder.proteinPerServing" class="field" type="number" inputmode="decimal" min="1" /><b>g</b></div></label></div></section>
       <button class="primary-button save-button" type="submit">保存并重新计算</button>
     </form>
-    <section class="data-section"><button type="button" @click="exportData"><Download :size="19" /><div><strong>导出个人数据</strong><span>下载 JSON 格式的饮食记录</span></div></button><div class="privacy"><ShieldCheck :size="18" /><span>当前为本地 Mock 阶段，数据仅保存在此设备浏览器中。</span></div></section>
+    <section class="data-section"><button type="button" @click="exportData"><Download :size="19" /><div><strong>导出个人数据</strong><span>下载 JSON 格式的饮食记录</span></div></button><div class="privacy"><ShieldCheck :size="18" /><span>饮食记录仅保存在此设备浏览器中，请定期导出备份。</span></div></section>
   </div>
 </template>
 
