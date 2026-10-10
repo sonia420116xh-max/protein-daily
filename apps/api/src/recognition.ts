@@ -38,6 +38,16 @@ export function parseRecognitionResult(outputText: string): RecognitionResult {
   }
 }
 
+export function createOpenAIClient(apiKey: string): OpenAI {
+  const baseURL = process.env.OPENAI_BASE_URL?.trim()
+  return new OpenAI({
+    apiKey,
+    ...(baseURL ? { baseURL: baseURL.replace(/\/$/, '') } : {}),
+    timeout: 55_000,
+    maxRetries: 1,
+  })
+}
+
 const responseSchema = {
   type: 'object',
   additionalProperties: false,
@@ -79,12 +89,13 @@ const recognitionPrompt = `你是饮食图片识别助手。分析照片中所�
 
 export async function recognizeFoodImage(file: File, apiKey: string): Promise<RecognitionResult> {
   const validation = validateImageUpload(file)
-  if (!validation.ok) throw new Error(validation.message)
+  if ('message' in validation) throw new Error(validation.message)
 
   const imageBase64 = Buffer.from(await file.arrayBuffer()).toString('base64')
-  const client = new OpenAI({ apiKey, timeout: 30_000, maxRetries: 1 })
+  const client = createOpenAIClient(apiKey)
   const response = await client.responses.create({
     model: process.env.OPENAI_VISION_MODEL || 'gpt-4.1-mini',
+    reasoning: { effort: 'low' },
     store: false,
     max_output_tokens: 1800,
     input: [{

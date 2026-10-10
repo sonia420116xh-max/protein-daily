@@ -1,1 +1,1 @@
-export { default } from '../apps/api/src/vercel'
+export { POST } from '../apps/api/src/vercel.js'

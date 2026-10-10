@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
-import { recognizeFoodImage, validateImageUpload } from './recognition'
+import { recognizeFoodImage, validateImageUpload } from './recognition.js'
 
 const app = new Hono()
 const rateLimits = new Map<string, { count: number; resetAt: number }>()
@@ -49,7 +49,7 @@ app.post('/api/recognize', async (context) => {
   if (!(image instanceof File)) return context.json({ error: '需要上传图片' }, 400)
 
   const validation = validateImageUpload(image)
-  if (!validation.ok) return context.json({ error: validation.message }, 400)
+  if ('message' in validation) return context.json({ error: validation.message }, 400)
 
   const result = await recognizeFoodImage(image, apiKey)
   if (!result.containsFood || result.candidates.length === 0) {

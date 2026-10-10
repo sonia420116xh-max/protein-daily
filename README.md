@@ -15,7 +15,7 @@ pnpm dev
 pnpm dev:api
 ```
 
-API 默认运行在 `http://localhost:8787`。可以通过 `OPENAI_VISION_MODEL` 覆盖默认的 `gpt-4.1-mini`。
+API 默认运行在 `http://localhost:8787`。可以通过 `OPENAI_VISION_MODEL` 覆盖默认的 `gpt-4.1-mini`。使用兼容 OpenAI Responses API 的中转时，额外配置 `OPENAI_BASE_URL`；地址会按原样作为 SDK API 根地址使用，不会自动添加 `/v1`。
 
 ## 手机随时访问
 

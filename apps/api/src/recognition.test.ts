@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseRecognitionResult, validateImageUpload } from './recognition'
+import { createOpenAIClient, parseRecognitionResult, validateImageUpload } from './recognition'
 
 describe('image upload validation', () => {
   it('accepts a compressed JPEG below the upload limit', () => {
@@ -44,5 +44,22 @@ describe('model result parsing', () => {
         weightBasis: 'cooked', confidenceLabel: '较高', hint: '',
       }],
     }))).toThrow('模型返回的数据格式无效')
+  })
+})
+
+describe('OpenAI-compatible provider configuration', () => {
+  it('uses the configured relay base URL without changing its path', () => {
+    process.env.OPENAI_BASE_URL = 'https://relay.example.com/custom/v1/'
+    const client = createOpenAIClient('test-key')
+
+    expect(client.baseURL).toBe('https://relay.example.com/custom/v1')
+    delete process.env.OPENAI_BASE_URL
+  })
+
+  it('uses the official OpenAI base URL when no relay is configured', () => {
+    delete process.env.OPENAI_BASE_URL
+    const client = createOpenAIClient('test-key')
+
+    expect(client.baseURL).toBe('https://api.openai.com/v1')
   })
 })

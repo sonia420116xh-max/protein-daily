@@ -1,6 +1,7 @@
 {
   "name": "protein-daily",
   "private": true,
+  "type": "module",
   "version": "0.1.0",
   "packageManager": "pnpm@10.17.1",
   "scripts": {
@@ -11,6 +12,7 @@
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
+    "@types/node": "^24.9.1",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }
