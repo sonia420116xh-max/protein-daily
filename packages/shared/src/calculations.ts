@@ -1,6 +1,18 @@
-import type { DailySummary, UserSettings } from './types'
+import type { DailySummary, TrainingDayOverrides, UserSettings } from './types'
 
 const roundToOne = (value: number) => Math.round(value * 10) / 10
+
+export function isValidIsoDate(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return false
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const date = new Date(Date.UTC(year, month - 1, day))
+
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+}
 
 export function calculateFoodProtein(weight: number, proteinPer100g: number): number {
   if (!Number.isFinite(weight) || !Number.isFinite(proteinPer100g) || weight <= 0 || proteinPer100g <= 0) {
@@ -9,7 +21,8 @@ export function calculateFoodProtein(weight: number, proteinPer100g: number): nu
   return roundToOne((weight * proteinPer100g) / 100)
 }
 
-export function isTrainingDay(date: string, trainingDays: number[]): boolean {
+export function isTrainingDay(date: string, trainingDays: number[], overrides: TrainingDayOverrides = {}): boolean {
+  if (Object.hasOwn(overrides, date)) return overrides[date] === true
   const weekday = new Date(`${date}T12:00:00`).getDay()
   return trainingDays.includes(weekday)
 }
@@ -17,8 +30,9 @@ export function isTrainingDay(date: string, trainingDays: number[]): boolean {
 export function getDailyTarget(
   date: string,
   settings: Pick<UserSettings, 'normalTarget' | 'trainingTarget' | 'trainingDays'>,
+  overrides: TrainingDayOverrides = {},
 ): number {
-  return isTrainingDay(date, settings.trainingDays) ? settings.trainingTarget : settings.normalTarget
+  return isTrainingDay(date, settings.trainingDays, overrides) ? settings.trainingTarget : settings.normalTarget
 }
 
 export function calculateDailySummary(target: number, proteinValues: number[]): DailySummary {

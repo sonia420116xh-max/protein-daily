@@ -5,9 +5,17 @@ import {
   calculatePowderSuggestion,
   getDailyTarget,
   isTrainingDay,
+  isValidIsoDate,
 } from './calculations'
 
 describe('protein calculations', () => {
+  it('accepts real ISO dates and rejects impossible calendar dates', () => {
+    expect(isValidIsoDate('2026-10-09')).toBe(true)
+    expect(isValidIsoDate('2024-02-29')).toBe(true)
+    expect(isValidIsoDate('2026-02-29')).toBe(false)
+    expect(isValidIsoDate('2026-99-99')).toBe(false)
+  })
+
   it('calculates food protein from edible weight and per-100g data', () => {
     expect(calculateFoodProtein(138, 31)).toBe(42.8)
   })
@@ -18,6 +26,16 @@ describe('protein calculations', () => {
     expect(isTrainingDay('2026-10-08', settings.trainingDays)).toBe(true)
     expect(getDailyTarget('2026-10-08', settings)).toBe(85)
     expect(getDailyTarget('2026-10-09', settings)).toBe(80)
+  })
+
+  it('allows a specific date to override the recurring training schedule', () => {
+    const settings = { normalTarget: 80, trainingTarget: 85, trainingDays: [2, 4, 6] }
+    const overrides = { '2026-10-08': false, '2026-10-09': true }
+
+    expect(isTrainingDay('2026-10-08', settings.trainingDays, overrides)).toBe(false)
+    expect(getDailyTarget('2026-10-08', settings, overrides)).toBe(80)
+    expect(isTrainingDay('2026-10-09', settings.trainingDays, overrides)).toBe(true)
+    expect(getDailyTarget('2026-10-09', settings, overrides)).toBe(85)
   })
 
   it('calculates totals and never returns a negative gap', () => {

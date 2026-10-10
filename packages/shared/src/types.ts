@@ -1,6 +1,7 @@
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 export type WeightBasis = 'cooked' | 'raw' | 'bone-in' | 'boneless'
 export type EntrySource = 'ai-estimate' | 'manual' | 'copied'
+export type TrainingDayOverrides = Record<string, boolean>
 
 export interface FoodEntry {
   id: string

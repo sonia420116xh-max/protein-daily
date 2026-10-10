@@ -5,7 +5,9 @@ import {
   calculateFoodProtein,
   calculatePowderSuggestion,
   getDailyTarget,
+  isTrainingDay,
   type FoodEntry,
+  type TrainingDayOverrides,
   type UserSettings,
 } from '@protein-daily/shared'
 import { defaultSettings, todayIso } from '@/data/defaults'
@@ -22,10 +24,11 @@ export const useNutritionStore = defineStore('nutrition', () => {
   const storedEntries = readStored<FoodEntry[]>('protein-daily.entries', [])
   const entries = ref<FoodEntry[]>(storedEntries.filter((entry) => !legacySeedEntryIds.has(entry.id)))
   const settings = ref<UserSettings>(readStored('protein-daily.settings', defaultSettings))
+  const trainingOverrides = ref<TrainingDayOverrides>(readStored('protein-daily.training-overrides', {}))
   const selectedDate = ref(todayIso)
 
   const entriesForDate = computed(() => entries.value.filter((entry) => entry.date === selectedDate.value))
-  const targetForDate = computed(() => getDailyTarget(selectedDate.value, settings.value))
+  const targetForDate = computed(() => targetByDate(selectedDate.value))
   const summaryForDate = computed(() => calculateDailySummary(targetForDate.value, entriesForDate.value.map((entry) => entry.protein)))
   const powderSuggestion = computed(() => calculatePowderSuggestion(summaryForDate.value.remaining, settings.value.powder))
 
@@ -56,17 +59,36 @@ export const useNutritionStore = defineStore('nutrition', () => {
 
   function updateSettings(next: UserSettings) { settings.value = structuredClone(next) }
 
+  function isTrainingDate(date: string) {
+    return isTrainingDay(date, settings.value.trainingDays, trainingOverrides.value)
+  }
+
+  function targetByDate(date: string) {
+    return getDailyTarget(date, settings.value, trainingOverrides.value)
+  }
+
+  function toggleTrainingDate(date: string) {
+    const nextValue = !isTrainingDate(date)
+    const recurringValue = isTrainingDay(date, settings.value.trainingDays)
+    const nextOverrides = { ...trainingOverrides.value }
+    if (nextValue === recurringValue) delete nextOverrides[date]
+    else nextOverrides[date] = nextValue
+    trainingOverrides.value = nextOverrides
+  }
+
   function entriesByDate(date: string) { return entries.value.filter((entry) => entry.date === date) }
   function summaryByDate(date: string) {
     const daily = entriesByDate(date)
-    return calculateDailySummary(getDailyTarget(date, settings.value), daily.map((entry) => entry.protein))
+    return calculateDailySummary(targetByDate(date), daily.map((entry) => entry.protein))
   }
 
   watch(entries, (value) => localStorage.setItem('protein-daily.entries', JSON.stringify(value)), { deep: true })
   watch(settings, (value) => localStorage.setItem('protein-daily.settings', JSON.stringify(value)), { deep: true })
+  watch(trainingOverrides, (value) => localStorage.setItem('protein-daily.training-overrides', JSON.stringify(value)), { deep: true })
 
   return {
-    entries, settings, selectedDate, entriesForDate, targetForDate, summaryForDate, powderSuggestion,
-    addEntry, updateEntry, removeEntry, copyEntry, updateSettings, entriesByDate, summaryByDate,
+    entries, settings, trainingOverrides, selectedDate, entriesForDate, targetForDate, summaryForDate, powderSuggestion,
+    addEntry, updateEntry, removeEntry, copyEntry, updateSettings, isTrainingDate, toggleTrainingDate,
+    targetByDate, entriesByDate, summaryByDate,
   }
 })

@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ChevronLeft, ChevronRight, Dumbbell } from 'lucide-vue-next'
+import { useRoute, useRouter } from 'vue-router'
+import { ChevronLeft, ChevronRight, Dumbbell, Plus } from 'lucide-vue-next'
 import type { FoodEntry, MealType } from '@protein-daily/shared'
-import { getDailyTarget, isTrainingDay } from '@protein-daily/shared'
+import { isValidIsoDate } from '@protein-daily/shared'
 import { todayIso } from '@/data/defaults'
 import { useNutritionStore } from '@/stores/nutrition'
 import EditEntrySheet from '@/components/EditEntrySheet.vue'
 
+const route = useRoute()
+const router = useRouter()
 const store = useNutritionStore()
-const activeMonth = ref(new Date(`${todayIso}T12:00:00`))
-const selected = ref(todayIso)
+const routeDate = typeof route.query.date === 'string' && isValidIsoDate(route.query.date) ? route.query.date : todayIso
+const activeMonth = ref(new Date(`${routeDate}T12:00:00`))
+const selected = ref(routeDate)
 const editing = ref<FoodEntry | null>(null)
 const weekDays = ['一', '二', '三', '四', '五', '六', '日']
 const mealNames: Record<MealType, string> = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐', snack: '加餐' }
@@ -24,16 +28,22 @@ const calendarDays = computed(() => {
     ...Array.from({ length: days }, (_, index) => {
       const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(index + 1).padStart(2, '0')}`
       const summary = store.summaryByDate(date)
-      return { date, day: index + 1, summary, target: getDailyTarget(date, store.settings), training: isTrainingDay(date, store.settings.trainingDays) }
+      return { date, day: index + 1, summary, training: store.isTrainingDate(date) }
     }),
   ]
 })
 const selectedEntries = computed(() => store.entriesByDate(selected.value))
 const selectedSummary = computed(() => store.summaryByDate(selected.value))
-const selectedTarget = computed(() => getDailyTarget(selected.value, store.settings))
+const selectedTarget = computed(() => store.targetByDate(selected.value))
+const selectedTraining = computed(() => store.isTrainingDate(selected.value))
 const selectedLabel = computed(() => new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(`${selected.value}T12:00:00`)))
 
 function moveMonth(offset: number) { activeMonth.value = new Date(activeMonth.value.getFullYear(), activeMonth.value.getMonth() + offset, 1) }
+function selectDate(date: string) {
+  selected.value = date
+  void router.replace({ name: 'history', query: { date } })
+}
+function addEntry() { void router.push({ name: 'record', query: { date: selected.value, from: 'history' } }) }
 function save(id: string, patch: Partial<FoodEntry>) { store.updateEntry(id, patch); editing.value = null }
 function remove(id: string) { store.removeEntry(id); editing.value = null }
 </script>
@@ -45,7 +55,7 @@ function remove(id: string) { store.removeEntry(id); editing.value = null }
       <div v-for="day in weekDays" :key="day" class="weekday">{{ day }}</div>
       <template v-for="(item, index) in calendarDays" :key="item?.date || `blank-${index}`">
         <div v-if="!item" class="day blank" />
-        <button v-else type="button" class="day" :class="{ selected: selected === item.date, today: todayIso === item.date }" :aria-label="`${item.date}，摄入 ${item.summary.consumed} 克`" @click="selected = item.date">
+        <button v-else type="button" class="day" :class="{ selected: selected === item.date, today: todayIso === item.date }" :aria-label="`${item.date}，摄入 ${item.summary.consumed} 克`" @click="selectDate(item.date)">
           <span>{{ item.day }}</span><i v-if="item.training"><Dumbbell :size="9" /></i>
           <div class="mini-bar"><b :style="{ width: `${item.summary.progress}%` }" /></div>
         </button>
@@ -54,7 +64,8 @@ function remove(id: string) { store.removeEntry(id); editing.value = null }
     </section>
 
     <section class="day-detail">
-      <header><div><span>{{ selectedLabel }}</span><h2>{{ selectedEntries.length ? `${selectedSummary.consumed} / ${selectedTarget}g` : '这天还没有记录' }}</h2></div><div v-if="selectedEntries.length" class="day-rate">{{ selectedSummary.progress }}%</div></header>
+      <header><div><span>{{ selectedLabel }}</span><h2>{{ selectedEntries.length ? `${selectedSummary.consumed} / ${selectedTarget}g` : '这天还没有记录' }}</h2></div><div class="day-actions"><button type="button" class="training-toggle" :class="{ active: selectedTraining }" :aria-pressed="selectedTraining" @click="store.toggleTrainingDate(selected)"><Dumbbell :size="15" />{{ selectedTraining ? '训练日' : '设为训练日' }}</button><div v-if="selectedEntries.length" class="day-rate">{{ selectedSummary.progress }}%</div></div></header>
+      <button type="button" class="add-entry" @click="addEntry"><Plus :size="18" /> 补记食物</button>
       <div v-if="selectedEntries.length" class="history-list">
         <button v-for="entry in selectedEntries" :key="entry.id" type="button" @click="editing = entry">
           <div class="meal-mark">{{ mealNames[entry.meal].slice(0, 1) }}</div>
@@ -62,7 +73,7 @@ function remove(id: string) { store.removeEntry(id); editing.value = null }
           <b>{{ entry.protein }}g</b>
         </button>
       </div>
-      <div v-else class="empty-history"><span>—</span><p>过去的空白也没关系，从下一餐继续。</p></div>
+      <div v-else class="empty-history"><span>—</span><p>这天还没有饮食记录，可以补记当时吃过的食物。</p></div>
     </section>
     <EditEntrySheet :entry="editing" @close="editing = null" @save="save" @remove="remove" />
   </div>
@@ -71,5 +82,6 @@ function remove(id: string) { store.removeEntry(id); editing.value = null }
 <style scoped>
 .page-header { align-items: flex-end; }.eyebrow { margin: 0 0 4px; color: #009966; }.page-title { margin: 0; }.month-nav { display: flex; align-items: center; gap: 6px; }.month-nav strong { min-width: 76px; text-align: center; font-size: 13px; }.month-nav button { width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 9px; background: #eaf0ec; color: #49635b; }
 .calendar { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-top: 20px; padding: 14px 10px 10px; border: 1px solid #e1e8e3; border-radius: 16px; background: #fff; }.weekday { padding: 4px 0 8px; text-align: center; color: #83918d; font-size: 10px; font-weight: 650; }.day { position: relative; aspect-ratio: .86; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 10px; background: transparent; color: #51655f; font-size: 12px; }.day.today span { font-weight: 800; color: #00875d; }.day.selected { background: #e8f7f1; color: #007c55; box-shadow: inset 0 0 0 1px #c8eadc; }.day i { position: absolute; top: 5px; right: 5px; color: #b1861b; }.mini-bar { width: 72%; height: 3px; overflow: hidden; border-radius: 3px; background: #e8edea; }.mini-bar b { display: block; height: 100%; border-radius: inherit; background: #00a874; }.calendar footer { grid-column: 1/-1; display: flex; align-items: center; justify-content: center; gap: 12px; padding-top: 9px; border-top: 1px solid #eef1ef; color: #7a8984; font-size: 9px; }.calendar footer span { display: flex; align-items: center; gap: 4px; }.legend-dot { width: 7px; height: 7px; border-radius: 50%; }.complete { background: #009966; }.partial { background: #e8b931; }
-.day-detail { margin-top: 18px; }.day-detail > header { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 10px; }.day-detail header span { color: #71837d; font-size: 11px; }.day-detail h2 { margin: 3px 0 0; font-size: 18px; }.day-rate { min-width: 48px; padding: 7px 8px; border-radius: 10px; background: #e9f7f1; color: #00865b; text-align: center; font-size: 12px; font-weight: 750; }.history-list { overflow: hidden; border: 1px solid #e3e9e5; border-radius: 15px; background: #fff; }.history-list button { width: 100%; min-height: 66px; display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 11px; padding: 10px 13px; border: 0; border-top: 1px solid #edf1ee; background: #fff; text-align: left; }.history-list button:first-child { border-top: 0; }.meal-mark { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 11px; background: #f0f5f1; color: #537168; font-size: 12px; font-weight: 750; }.history-list strong,.history-list span { display: block; }.history-list strong { font-size: 14px; }.history-list span { margin-top: 3px; color: #7b8985; font-size: 10px; }.history-list b { color: #007f58; font-size: 14px; }.empty-history { padding: 34px 20px; border: 1px dashed #d5dfd9; border-radius: 14px; text-align: center; color: #83908c; }.empty-history span { font-size: 28px; }.empty-history p { margin: 5px 0 0; font-size: 12px; }
+.day-detail { margin-top: 18px; }.day-detail > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 0 2px 10px; }.day-detail header span { color: #71837d; font-size: 11px; }.day-detail h2 { margin: 3px 0 0; font-size: 18px; }.day-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }.training-toggle { min-height: 34px; display: inline-flex; align-items: center; gap: 5px; padding: 0 9px; border: 1px solid #d9e2dd; border-radius: 9px; background: #fff; color: #63766f; font-size: 10px; font-weight: 700; white-space: nowrap; }.training-toggle.active { border-color: #dfbd55; background: #fff8dc; color: #8b6811; }.day-rate { min-width: 48px; padding: 7px 8px; border-radius: 9px; background: #e9f7f1; color: #00865b; text-align: center; font-size: 12px; font-weight: 750; }.add-entry { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 10px; border: 1px solid #cce4da; border-radius: 11px; background: #eef8f4; color: #007f58; font-size: 12px; font-weight: 750; }.history-list { overflow: hidden; border: 1px solid #e3e9e5; border-radius: 15px; background: #fff; }.history-list button { width: 100%; min-height: 66px; display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 11px; padding: 10px 13px; border: 0; border-top: 1px solid #edf1ee; background: #fff; text-align: left; }.history-list button:first-child { border-top: 0; }.meal-mark { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 11px; background: #f0f5f1; color: #537168; font-size: 12px; font-weight: 750; }.history-list strong,.history-list span { display: block; }.history-list strong { font-size: 14px; }.history-list span { margin-top: 3px; color: #7b8985; font-size: 10px; }.history-list b { color: #007f58; font-size: 14px; }.empty-history { padding: 30px 20px; border: 1px dashed #d5dfd9; border-radius: 14px; text-align: center; color: #83908c; }.empty-history span { font-size: 28px; }.empty-history p { margin: 5px 0 0; font-size: 12px; }
+@media (max-width: 360px) { .day-detail > header { align-items: flex-start; }.day-actions { max-width: 130px; } }
 </style>

@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Camera, ChevronLeft, Image, LoaderCircle, Plus, RefreshCw, Sparkles, Trash2 } from 'lucide-vue-next'
 import { showToast } from 'vant'
 import type { AiFoodCandidate, MealType } from '@protein-daily/shared'
-import { calculateFoodProtein } from '@protein-daily/shared'
+import { calculateFoodProtein, isValidIsoDate } from '@protein-daily/shared'
 import { todayIso } from '@/data/defaults'
 import { useNutritionStore } from '@/stores/nutrition'
 import { compressImage } from '@/utils/image'
@@ -23,6 +23,10 @@ const recognitionError = ref('')
 const recognitionDisclaimer = ref('图片识别和重量均为估算，请确认后保存。')
 const meal = ref<MealType>((route.query.meal as MealType) || 'lunch')
 const form = reactive({ foodName: '', estimatedWeight: 100, proteinPer100g: 10, weightBasis: 'cooked' as AiFoodCandidate['weightBasis'] })
+const requestedDate = typeof route.query.date === 'string' && isValidIsoDate(route.query.date) ? route.query.date : todayIso
+const entryDate = ref(requestedDate)
+const returnToHistory = route.query.from === 'history'
+const recordDateLabel = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric' }).format(new Date(`${entryDate.value}T12:00:00`))
 
 const hasValidCandidates = computed(() => candidates.value.length > 0 && candidates.value.every((item) => item.foodName.trim() && item.estimatedWeight > 0 && item.proteinPer100g > 0))
 const manualProtein = computed(() => calculateFoodProtein(form.estimatedWeight, form.proteinPer100g))
@@ -73,15 +77,19 @@ function addCandidate() {
 }
 function confirmCandidates() {
   if (!hasValidCandidates.value) return
-  for (const item of candidates.value) store.addEntry({ date: todayIso, meal: meal.value, foodName: item.foodName.trim(), estimatedWeight: item.estimatedWeight, proteinPer100g: item.proteinPer100g, weightBasis: item.weightBasis, source: 'ai-estimate' })
+  for (const item of candidates.value) store.addEntry({ date: entryDate.value, meal: meal.value, foodName: item.foodName.trim(), estimatedWeight: item.estimatedWeight, proteinPer100g: item.proteinPer100g, weightBasis: item.weightBasis, source: 'ai-estimate' })
   showToast(`已添加 ${candidates.value.length} 项`)
-  router.push('/')
+  finishRecording()
 }
 function saveManual() {
   if (!form.foodName.trim() || form.estimatedWeight <= 0 || form.proteinPer100g <= 0) return
-  store.addEntry({ date: todayIso, meal: meal.value, ...form, foodName: form.foodName.trim(), source: 'manual' })
+  store.addEntry({ date: entryDate.value, meal: meal.value, ...form, foodName: form.foodName.trim(), source: 'manual' })
   showToast('已添加记录')
-  router.push('/')
+  finishRecording()
+}
+function finishRecording() {
+  if (returnToHistory) router.push({ name: 'history', query: { date: entryDate.value } })
+  else router.push('/')
 }
 onBeforeUnmount(() => { if (previewUrl.value) URL.revokeObjectURL(previewUrl.value) })
 </script>
@@ -90,7 +98,7 @@ onBeforeUnmount(() => { if (previewUrl.value) URL.revokeObjectURL(previewUrl.val
   <div class="page record-page">
     <header class="page-header">
       <button class="icon-button" type="button" aria-label="返回" @click="router.back()"><ChevronLeft :size="21" /></button>
-      <div><p class="eyebrow">添加饮食</p><h1 class="page-title">拍一下，先估算</h1></div>
+      <div><p class="eyebrow">{{ entryDate === todayIso ? '添加饮食' : `补记 ${recordDateLabel}` }}</p><h1 class="page-title">拍一下，先估算</h1></div>
       <div class="header-spacer" />
     </header>
 

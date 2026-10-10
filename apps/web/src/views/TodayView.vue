@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import { Dumbbell, Settings, Sparkles, Zap } from 'lucide-vue-next'
 import { showToast } from 'vant'
 import type { FoodEntry, MealType } from '@protein-daily/shared'
-import { isTrainingDay } from '@protein-daily/shared'
 import { todayIso } from '@/data/defaults'
 import { useNutritionStore } from '@/stores/nutrition'
 import ProgressRing from '@/components/ProgressRing.vue'
@@ -16,7 +15,7 @@ const store = useNutritionStore()
 store.selectedDate = todayIso
 const editing = ref<FoodEntry | null>(null)
 const todayLabel = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(`${todayIso}T12:00:00`))
-const training = computed(() => isTrainingDay(todayIso, store.settings.trainingDays))
+const training = computed(() => store.isTrainingDate(todayIso))
 const meals: { type: MealType; title: string; hint: string }[] = [
   { type: 'breakfast', title: '早餐', hint: '开启有能量的一天' },
   { type: 'lunch', title: '午餐', hint: '记录今天的午餐' },
