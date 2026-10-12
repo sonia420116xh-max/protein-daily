@@ -5,9 +5,21 @@ import 'vant/lib/index.css'
 import './styles.css'
 import App from './App.vue'
 import router from './router'
+import { createPwaUpdateController } from './utils/pwaUpdate'
 
-registerSW({
+let updateServiceWorker: (reloadPage?: boolean) => Promise<void> = async () => undefined
+const updateController = createPwaUpdateController({
+  activateUpdate: (reloadPage) => updateServiceWorker(reloadPage),
+  reload: () => window.location.reload(),
+})
+
+navigator.serviceWorker?.addEventListener('controllerchange', updateController.handleControllerChange)
+
+updateServiceWorker = registerSW({
   immediate: true,
+  onNeedRefresh() {
+    void updateController.applyUpdate()
+  },
   onRegisteredSW(_serviceWorkerUrl, registration) {
     if (!registration) return
 
