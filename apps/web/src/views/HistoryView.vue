@@ -81,7 +81,7 @@ function remove(id: string) { store.removeEntry(id); editing.value = null }
       <div v-if="selectedEntries.length" class="history-list">
         <button v-for="entry in selectedEntries" :key="entry.id" type="button" @click="editing = entry">
           <div class="meal-mark">{{ mealNames[entry.meal].slice(0, 1) }}</div>
-          <div><strong>{{ entry.foodName }}</strong><span>{{ mealNames[entry.meal] }} · 约 {{ entry.estimatedWeight }}g</span></div>
+          <div><strong>{{ entry.foodName }}</strong><span>{{ mealNames[entry.meal] }} · {{ entry.source === 'recipe' ? `菜谱 ${entry.servings} 份` : `约 ${entry.estimatedWeight}g` }}</span></div>
           <b>{{ entry.protein }}g</b>
         </button>
       </div>

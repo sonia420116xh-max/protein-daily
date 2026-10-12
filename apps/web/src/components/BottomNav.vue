@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { CalendarDays, CirclePlus, House } from 'lucide-vue-next'
+import { BookOpen, CalendarDays, CirclePlus, House, UserRound } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const items = [
   { label: '今日', to: '/', icon: House },
   { label: '记录', to: '/record', icon: CirclePlus },
+  { label: '菜谱', to: '/recipes', icon: BookOpen },
   { label: '历史', to: '/history', icon: CalendarDays },
+  { label: '个人', to: '/profile', icon: UserRound },
 ]
 </script>
 
@@ -20,7 +22,7 @@ const items = [
 </template>
 
 <style scoped>
-.bottom-nav { position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; height: calc(68px + var(--safe-bottom)); padding: 6px max(18px, env(safe-area-inset-left)) var(--safe-bottom) max(18px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid rgba(220,230,223,.9); background: rgba(255,255,255,.94); backdrop-filter: blur(18px); }
+.bottom-nav { position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; height: calc(68px + var(--safe-bottom)); padding: 6px max(10px, env(safe-area-inset-left)) var(--safe-bottom) max(10px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid rgba(220,230,223,.9); background: rgba(255,255,255,.94); backdrop-filter: blur(18px); }
 .nav-item { position: relative; min-width: 0; color: #74857f; text-decoration: none; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3px; font-size: 11px; font-weight: 650; }
 .nav-item.active { color: #009966; }
 .nav-item.active::before { content: ''; position: absolute; top: -6px; width: 28px; height: 3px; border-radius: 0 0 4px 4px; background: #009966; }

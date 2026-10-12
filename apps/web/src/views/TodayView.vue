@@ -39,7 +39,7 @@ function remove(id: string) { store.removeEntry(id); editing.value = null; showT
 
     <section class="summary-card">
       <div class="summary-copy"><span class="summary-kicker">今日蛋白质</span><h2>还差 <strong>{{ store.summaryForDate.remaining }}</strong>g</h2><p>{{ store.summaryForDate.remaining > 0 ? '把缺口拆到接下来的每一餐，更容易完成。' : '今天的目标完成了，保持均衡饮食。' }}</p></div>
-      <ProgressRing :progress="store.summaryForDate.progress" :consumed="store.summaryForDate.consumed" :target="store.targetForDate" />
+      <div class="summary-metrics"><ProgressRing :progress="store.summaryForDate.progress" :consumed="store.summaryForDate.consumed" :target="store.targetForDate" /><span>{{ store.nutritionForDate.maxKcal ? `${store.nutritionForDate.minKcal}–${store.nutritionForDate.maxKcal} kcal` : '热量待补充' }}</span></div>
     </section>
 
     <section class="powder-strip">
@@ -69,6 +69,7 @@ function remove(id: string) { store.removeEntry(id); editing.value = null; showT
 .summary-copy h2 { margin: 7px 0 8px; font-size: 20px; letter-spacing: 0; }
 .summary-copy h2 strong { font-size: 38px; line-height: 1; }
 .summary-copy p { margin: 0; font-size: 11px; line-height: 1.55; opacity: .76; }
+.summary-metrics { flex: 0 0 auto; text-align: center; }.summary-metrics span { display: block; margin-top: 5px; color: rgba(255,255,255,.8); font-size: 9px; }
 .powder-strip { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 11px; margin-top: 10px; padding: 13px 14px; border: 1px solid #e8e6d9; border-radius: 14px; background: #fffdf4; }
 .powder-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; background: #f7e9ad; color: #8b6710; }
 .powder-strip span, .powder-strip strong { display: block; }

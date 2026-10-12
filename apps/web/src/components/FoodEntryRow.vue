@@ -17,7 +17,8 @@ const basisLabels = { cooked: '熟重', raw: '生重', 'bone-in': '带骨', bone
         <strong>{{ entry.foodName }}</strong>
         <Sparkles v-if="entry.source === 'ai-estimate'" :size="13" class="ai-icon" aria-label="AI 估算" />
       </div>
-      <span>约 {{ entry.estimatedWeight }}g · {{ basisLabels[entry.weightBasis] }}</span>
+      <span v-if="entry.source === 'recipe'">菜谱 · {{ entry.servings }} 份<span v-if="entry.caloriesMax"> · {{ entry.caloriesMin }}–{{ entry.caloriesMax }} kcal</span></span>
+      <span v-else>约 {{ entry.estimatedWeight }}g · {{ basisLabels[entry.weightBasis] }}</span>
     </div>
     <div class="protein"><strong>{{ entry.protein }}</strong><span>g</span></div>
     <button class="row-action" type="button" aria-label="复制这项记录" @click="$emit('copy', entry)"><Copy :size="17" /></button>

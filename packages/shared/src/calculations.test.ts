@@ -3,7 +3,10 @@ import {
   calculateDailySummary,
   calculateFoodProtein,
   calculatePowderSuggestion,
+  calculateNutritionSummary,
+  scaleRecipeNutrition,
   getDailyTarget,
+  getWeightBasedNutritionTargets,
   isTrainingDay,
   isValidIsoDate,
 } from './calculations'
@@ -54,5 +57,36 @@ describe('protein calculations', () => {
 
   it('handles invalid powder configuration safely', () => {
     expect(calculatePowderSuggestion(20, { servingWeight: 30, proteinPerServing: 0 })).toBe(0)
+  })
+
+  it('scales a recipe nutrition snapshot by the selected servings', () => {
+    expect(scaleRecipeNutrition({ proteinG: 34, minKcal: 470, maxKcal: 570 }, 1.5)).toEqual({
+      proteinG: 51,
+      minKcal: 705,
+      maxKcal: 855,
+    })
+  })
+
+  it('summarizes protein and calorie snapshots while supporting legacy entries', () => {
+    expect(calculateNutritionSummary([
+      { protein: 34, caloriesMin: 470, caloriesMax: 570 },
+      { protein: 12 },
+      { protein: 31, caloriesMin: 480, caloriesMax: 580 },
+    ])).toEqual({ proteinG: 77, minKcal: 950, maxKcal: 1150 })
+  })
+
+  it('derives nutrition target ranges from the current body weight', () => {
+    expect(getWeightBasedNutritionTargets(45)).toEqual({
+      protein: { min: 81, max: 90 },
+      trainingCalories: { min: 1710, max: 1845 },
+      restCalories: { min: 1575, max: 1755 },
+      trainingCarbs: { min: 198, max: 239 },
+      restCarbs: { min: 171, max: 212 },
+      fat: { min: 50, max: 59 },
+    })
+  })
+
+  it('returns empty target ranges for an invalid body weight', () => {
+    expect(getWeightBasedNutritionTargets(0)).toBeNull()
   })
 })

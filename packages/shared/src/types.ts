@@ -1,6 +1,6 @@
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 export type WeightBasis = 'cooked' | 'raw' | 'bone-in' | 'boneless'
-export type EntrySource = 'ai-estimate' | 'manual' | 'copied'
+export type EntrySource = 'ai-estimate' | 'manual' | 'copied' | 'recipe'
 export type TrainingDayOverrides = Record<string, boolean>
 
 export interface FoodEntry {
@@ -11,6 +11,10 @@ export interface FoodEntry {
   estimatedWeight: number
   proteinPer100g: number
   protein: number
+  caloriesMin?: number
+  caloriesMax?: number
+  recipeId?: string
+  servings?: number
   weightBasis: WeightBasis
   source: EntrySource
   note?: string
@@ -18,8 +22,31 @@ export interface FoodEntry {
   createdAt: string
 }
 
+export interface RecipeIngredient {
+  name: string
+  weightG: number
+  weightBasis: WeightBasis
+}
+
+export interface Recipe {
+  id: string
+  name: string
+  mealType: 'lunch' | 'dinner'
+  ingredients: RecipeIngredient[]
+  proteinEstimateG: number
+  energyEstimateKcal: { min: number; max: number }
+  tags: string[]
+  notes: string
+}
+
 export interface UserSettings {
   weight: number
+  height?: number | null
+  bodyFatPercentage?: number | null
+  waist?: number | null
+  hips?: number | null
+  chest?: number | null
+  profileVersion?: number
   normalTarget: number
   trainingTarget: number
   trainingDays: number[]

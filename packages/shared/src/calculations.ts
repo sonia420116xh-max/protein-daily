@@ -1,6 +1,44 @@
 import type { DailySummary, TrainingDayOverrides, UserSettings } from './types'
 
 const roundToOne = (value: number) => Math.round(value * 10) / 10
+const range = (weight: number, minRate: number, maxRate: number) => ({
+  min: Math.round(weight * minRate),
+  max: Math.round(weight * maxRate),
+})
+
+export function getWeightBasedNutritionTargets(weight: number) {
+  if (!Number.isFinite(weight) || weight <= 0) return null
+  return {
+    protein: range(weight, 1.8, 2),
+    trainingCalories: range(weight, 38, 41),
+    restCalories: range(weight, 35, 39),
+    trainingCarbs: range(weight, 4.4, 5.3),
+    restCarbs: range(weight, 3.8, 4.7),
+    fat: range(weight, 1.1, 1.3),
+  }
+}
+
+export function scaleRecipeNutrition(
+  nutrition: { proteinG: number; minKcal: number; maxKcal: number },
+  servings: number,
+) {
+  const factor = Number.isFinite(servings) && servings > 0 ? servings : 0
+  return {
+    proteinG: roundToOne(nutrition.proteinG * factor),
+    minKcal: Math.round(nutrition.minKcal * factor),
+    maxKcal: Math.round(nutrition.maxKcal * factor),
+  }
+}
+
+export function calculateNutritionSummary(
+  entries: Array<{ protein: number; caloriesMin?: number; caloriesMax?: number }>,
+) {
+  return entries.reduce((summary, entry) => ({
+    proteinG: roundToOne(summary.proteinG + Math.max(0, entry.protein || 0)),
+    minKcal: summary.minKcal + Math.max(0, entry.caloriesMin || 0),
+    maxKcal: summary.maxKcal + Math.max(0, entry.caloriesMax || 0),
+  }), { proteinG: 0, minKcal: 0, maxKcal: 0 })
+}
 
 export function isValidIsoDate(value: string): boolean {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
